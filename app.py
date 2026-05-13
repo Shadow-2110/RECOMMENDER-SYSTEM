@@ -7,6 +7,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 API_KEY = "14270b3c76be75bae1ddb3e98f600c5a"
 
+
 st.set_page_config(
     page_title="Movie Recommender System",
     page_icon="🎬",
@@ -38,7 +39,6 @@ h1 {
 
 </style>
 """, unsafe_allow_html=True)
-
 
 @st.cache_resource
 def load_data():
@@ -85,17 +85,11 @@ def fetch_poster(movie_name):
 
         return full_path
 
-    except requests.exceptions.RequestException as e:
-
-        print("Error:", e)
-
+    except:
         return None
 
 
 def recommend(movie, n=10):
-
-    if movie not in indices:
-        return [], []
 
     idx = indices[movie]
 
@@ -104,7 +98,7 @@ def recommend(movie, n=10):
         tfidf_matrix
     ).flatten()
 
-    movie_indices = similarity.argsort()[::-1][1:n+1]
+    movie_indices = similarity.argsort()[::-1][1:100]
 
     recommended_movies = []
     recommended_posters = []
@@ -113,18 +107,25 @@ def recommend(movie, n=10):
 
         movie_title = df.iloc[i]['title']
 
-        recommended_movies.append(movie_title)
-
         poster = fetch_poster(movie_title)
 
-        recommended_posters.append(poster)
+        # ONLY KEEP MOVIES WITH POSTERS
+        if poster:
+
+            recommended_movies.append(movie_title)
+
+            recommended_posters.append(poster)
+
+        # STOP WHEN REQUIRED NUMBER REACHED
+        if len(recommended_movies) == n:
+            break
 
     return recommended_movies, recommended_posters
 
 
 st.title("🎬 Movie Recommender System")
 
-st.write("Get recommendations based on your favorite movie")
+st.write("Get movie recommendations with posters")
 
 
 movie_list = sorted(df['title'].unique())
@@ -141,6 +142,7 @@ number = st.slider(
     10
 )
 
+
 if st.button("Recommend"):
 
     names, posters = recommend(selected_movie, number)
@@ -153,12 +155,6 @@ if st.button("Recommend"):
 
         with cols[i % 5]:
 
-            if posters[i]:
-
-                st.image(posters[i])
-
-            else:
-
-                st.write("No Image Available")
+            st.image(posters[i])
 
             st.caption(names[i])
